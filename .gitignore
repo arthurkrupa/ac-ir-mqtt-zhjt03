@@ -1,0 +1,5 @@
+.vscode
+.pioenvs
+.piolibdeps
+temp/
+include/config.h
