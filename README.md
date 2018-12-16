@@ -1,6 +1,6 @@
 # AC Infrared to MQTT adapter ZH/JT-03
 
-An Arduino/ESP8266 infrared sender and receiver compatible with AC units controlled by ZH/JT-03 remotes.
+Arduino/ESP8266 infrared to MQTT adapter for air conditioners using the ZH/JT-03 remote.
 
 ## Supported AC units
 
@@ -165,3 +165,11 @@ This part is combined from two components:
 #### 6. Footer
 
 Always `54ab` (doesn't change).
+
+## License
+
+This project is licensed under the GNU GPLv3 - see the [LICENSE.md](LICENSE.md) file for details
+
+## Acknowledgments
+
+- [Nixsm](https://github.com/Nixsm/arduino-ac-remote) for first steps in reverse-engineering the IR protocol
