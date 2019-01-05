@@ -73,22 +73,22 @@ void callback(char* topic, byte* payload, unsigned int length) {
   if (strcmp(topic,topic_power_subscribe)==0) {
     if (got_bool) {
       hvac.turnOn();
-      client.publish(topic_power_publish, "1");
+      client.publish(topic_power_publish, "1", true);
     }
     else {
       hvac.turnOff();
-      client.publish(topic_power_publish, "0");
+      client.publish(topic_power_publish, "0", true);
     }
   }
 
   // Temperature topic in
   if (strcmp(topic,topic_temperature_subscribe)==0) {
-    if (got_int > 32)
-      got_int = 32;
-    if (got_int < 16)
-      got_int = 16;
+    if (got_int > CHIGO_TEMP_MAX)
+      got_int = CHIGO_TEMP_MAX;
+    if (got_int < CHIGO_TEMP_MIN)
+      got_int = CHIGO_TEMP_MIN;
     hvac.setTemperatureTo(got_int);
-    client.publish(topic_temperature_publish, String(got_int).c_str());
+    client.publish(topic_temperature_publish, String(got_int).c_str(), true);
   }
 
   // Mode topic in
@@ -96,15 +96,15 @@ void callback(char* topic, byte* payload, unsigned int length) {
     for (int i=0; i<sizeof(ac_modes); i++) {
       if (strcmp(p_payload,"off")==0) {
         hvac.turnOff();
-        client.publish(topic_power_publish, "0");
-        client.publish(topic_mode_publish, "off");
+        client.publish(topic_power_publish, "0", true);
+        client.publish(topic_mode_publish, "off", true);
         break;
       }
       else if (strcmp(p_payload,ac_modes[i])==0) {
         hvac.setModeTo(static_cast<Mode>(i));
-        client.publish(topic_power_publish, "1");
-        client.publish(topic_mode_publish, ac_modes[i]);
-        client.publish(topic_temperature_publish, String(hvac.getTemperature()).c_str());
+        client.publish(topic_power_publish, "1", true);
+        client.publish(topic_mode_publish, ac_modes[i], true);
+        client.publish(topic_temperature_publish, String(hvac.getTemperature()).c_str(), true);
         break;
       }
     }
@@ -115,7 +115,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     for (int i=0; i<sizeof(fan_modes); i++) {
       if (strcmp(p_payload,fan_modes[i])==0) {
         hvac.setSpeedTo(static_cast<Speed>(i));
-        client.publish(topic_fan_publish, fan_modes[i]);
+        client.publish(topic_fan_publish, fan_modes[i], true);
         break;
       }
     }
@@ -126,7 +126,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     for (int i=0; i<sizeof(swing_modes); i++) {
       if (strcmp(p_payload,swing_modes[i])==0) {
         hvac.setSwingTo(i);
-        client.publish(topic_swing_publish, swing_modes[i]);
+        client.publish(topic_swing_publish, swing_modes[i], true);
         break;
       }
     }
@@ -183,41 +183,41 @@ void loop() {
 
   // Fix for initial abnormal values (e.g. temperature = 1073646649)
   // Interrupt if received values are abnormal
-  if (newHvacState.temperature > 32)
+  if (newHvacState.temperature < CHIGO_TEMP_MIN || newHvacState.temperature > CHIGO_TEMP_MAX)
     return;
 
   // Check for changes in power
   if (newHvacState.power != oldHvacState.power) {
-    client.publish(topic_power_publish, newHvacState.power ? "1" : "0");
+    client.publish(topic_power_publish, newHvacState.power ? "1" : "0", true);
     
     // Fix for Home Assistant MQTT HVAC
     // set pseudo-mode "off"
     if (!newHvacState.power)
-      client.publish(topic_mode_publish, "off");
+      client.publish(topic_mode_publish, "off", true);
   }
 
   // Check for changes in temperature
   if (newHvacState.temperature != oldHvacState.temperature) {
     char c_temp[3];
-    client.publish(topic_temperature_publish, itoa(newHvacState.temperature, c_temp, 10));
+    client.publish(topic_temperature_publish, itoa(newHvacState.temperature, c_temp, 10), true);
   }
 
   // Check for changes in AC mode
   if (newHvacState.mode != oldHvacState.mode) {
     if (newHvacState.mode < 5)
-      client.publish(topic_mode_publish, ac_modes[newHvacState.mode]);
+      client.publish(topic_mode_publish, ac_modes[newHvacState.mode], true);
   }
 
   // Check for changes in fan speed
   if (newHvacState.airSpeed != oldHvacState.airSpeed) {
     if (newHvacState.airSpeed < 4)
-      client.publish(topic_fan_publish, fan_modes[newHvacState.airSpeed]);
+      client.publish(topic_fan_publish, fan_modes[newHvacState.airSpeed], true);
   }
 
   // Check for changes in swing mode
   if (newHvacState.swing != oldHvacState.swing) {
     if (newHvacState.swing < 3)
-      client.publish(topic_swing_publish, swing_modes[newHvacState.swing]);
+      client.publish(topic_swing_publish, swing_modes[newHvacState.swing], true);
   }
   
   // Update entire state
