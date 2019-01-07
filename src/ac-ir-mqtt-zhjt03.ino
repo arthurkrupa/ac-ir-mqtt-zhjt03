@@ -1,4 +1,4 @@
-#define SEND_PIN      4 // NodeMCU 4=D2
+#define SEND_PIN      15 // NodeMCU 15=D8
 #define RECV_PIN      14 // NodeMCU 14=D5
 #define LED           D0 // NodeMCU builtin LED
 #define CHIGO_DEBUG   false
