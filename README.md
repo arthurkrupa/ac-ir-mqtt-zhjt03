@@ -18,6 +18,12 @@ The ZH/JT-03 remote supports a wide range of generic AC units from different bra
 2. Create a `include/config.h` file based on `include/config-sample.h` with your configuration
 3. Build
 
+## Persistence
+
+To remember the previous state between power cycles, the software uses NodeMCU's EEPROM for storage. When uploading the sketch to new devices, make sure to turn on `MEMORY_INIT`, but ONLY ONCE! After that, turn this flag off and re-upload.
+
+Note: EEPROMs have a finite lifespan (~100K writes). If you have a stable power source, you can turn this off setting the `MEMORY_MODE` flag to `false`.
+
 ## Protocol specification
 
 The IR signals are sent at 38 KHz. The main message body is placed between two high header signals (`6234`, `7392`) and three footer signals (`608`, `7372`, `616`).

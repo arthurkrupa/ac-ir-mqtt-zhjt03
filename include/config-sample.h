@@ -1,3 +1,9 @@
+#define SEND_PIN      15 // NodeMCU 15=D8
+#define RECV_PIN      14 // NodeMCU 14=D5
+#define DEBUG_MODE    false // Dump debugging info to serial monitor
+#define MEMORY_MODE   true // Save HVAC state in EEPROM
+#define MEMORY_INIT   false // Run only once on new device to prepare EEPROM
+
 const char* ssid = "";
 const char* password = "";
 const char* mqtt_server = "";

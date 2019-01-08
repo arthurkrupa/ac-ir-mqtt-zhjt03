@@ -1,12 +1,15 @@
-#define SEND_PIN      15 // NodeMCU 15=D8
-#define RECV_PIN      14 // NodeMCU 14=D5
-#define LED           D0 // NodeMCU builtin LED
-#define CHIGO_DEBUG   false
-
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include "hvac.h"
 #include "config.h"
+#include "codes.h"
+#include "models.h"
+#include "memory.h"
+#include "hvac.h"
+
+// LED light
+#ifndef LED
+#define LED           D0
+#endif
 
 HvacController hvac;
 HvacState newHvacState;
@@ -132,6 +135,10 @@ void callback(char* topic, byte* payload, unsigned int length) {
     }
   }
 
+  // Update HVAC state memory based on MQTT message
+  if (MEMORY_MODE) {
+    hvac.updateMemory();
+  }
 }
 
 // Establish MQTT connection
@@ -165,11 +172,10 @@ void reconnect() {
 void setup()
 {
   pinMode(LED, OUTPUT);
-  hvac.setup();
-  Serial.println("[STATUS] Waiting for IR signals...");
-
   setup_wifi();
   client.setServer(mqtt_server, 1883);
+  hvac.setup();
+  Serial.println("[STATUS] Waiting for IR signals...");
   client.setCallback(callback);
 }
 
