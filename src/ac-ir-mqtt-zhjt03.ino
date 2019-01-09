@@ -141,7 +141,9 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
 }
 
-// Establish MQTT connection
+/**
+ * Establish MQTT connection
+ */
 void reconnect() {
   // Loop until we're reconnected
   while (!client.connected()) {
@@ -153,6 +155,14 @@ void reconnect() {
     if (client.connect(clientID, mqtt_username, mqtt_password)) {
       Serial.print(" connected");
       client.publish(topic_handshake, "hello world");
+
+      // Publish last state if available
+      if (MEMORY_MODE) {
+        memory.read(oldHvacState);
+        publishState(oldHvacState);
+      }
+
+      // Subscribe to topics
       client.subscribe(topic_power_subscribe);
       client.subscribe(topic_temperature_subscribe);
       client.subscribe(topic_mode_subscribe);
@@ -169,6 +179,21 @@ void reconnect() {
   }
 }
 
+/**
+ * Publish entire state to MQTT
+ */
+void publishState(HvacState state) {
+  char c_temp[3];
+  client.publish(topic_power_publish, newHvacState.power ? "1" : "0", true);
+  client.publish(topic_mode_publish, ac_modes[state.mode], true);
+  client.publish(topic_temperature_publish, itoa(state.temperature, c_temp, 10), true);
+  client.publish(topic_fan_publish, fan_modes[state.airSpeed], true);
+  client.publish(topic_swing_publish, swing_modes[state.swing], true);
+}
+
+/**
+ * Main setup
+ */
 void setup()
 {
   pinMode(LED, OUTPUT);
@@ -179,6 +204,9 @@ void setup()
   client.setCallback(callback);
 }
 
+/**
+ * Main loop
+ */
 void loop() {
   if (!client.connected()) {
     reconnect();
