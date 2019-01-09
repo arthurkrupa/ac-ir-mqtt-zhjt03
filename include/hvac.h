@@ -430,7 +430,7 @@ class HvacController {
     }
   }
 
-  private: void addBytesToData(char* bytes, size_t count, List& data) {
+  private: void addBytesToData(String bytes, size_t count, List& data) {
     for (int i = 0; i < count; ++i) {
       byteToRawData(hexToByte(bytes[i]), data);
     }
@@ -467,11 +467,11 @@ class HvacController {
     addBytesToData(getExtraAsCode(state.turbo, state.hold), 4, data);
   }
 
-  private: void addCommandToData(char* command, List& data) {
+  private: void addCommandToData(String command, List& data) {
     addBytesToData(command, 4, data);
   }
 
-  private: void addParameterToData(char* parameter, List& data) {
+  private: void addParameterToData(String parameter, List& data) {
     addBytesToData(parameter, 4, data);
   }
 
@@ -529,7 +529,7 @@ class HvacController {
     Serial.println();
   }
 
-  private: void sendCommand(char* cmd, char* param) {
+  private: void sendCommand(String cmd, char* param) {
     List data;
     addHeaderToData(data);
 
