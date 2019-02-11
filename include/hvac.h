@@ -58,9 +58,7 @@ class HvacController {
    * Converters
    */
 
-  private: unsigned getTemperatureFromParameter(String param) {
-    unsigned temperature = 25;
-
+  private: unsigned getTemperatureFromParameter(String param, unsigned temperature) {
     // Split into temperature and mode codes
     String tempCode = param;
     String modeCode = param;
@@ -82,8 +80,8 @@ class HvacController {
     return temperature;
   }
 
-  private: unsigned getTimerDelayFromCode(String code) {
-    unsigned timerDelay = 0;
+  private: unsigned getTimerDelayFromCode(String code, unsigned timerDelay) {
+    // unsigned timerDelay = 0;
     
     for (int i=0; i<25; i++)
     {
@@ -93,8 +91,8 @@ class HvacController {
     return timerDelay;
   }
 
-  private: bool getTimerStateFromCode(String code) {
-    unsigned isSet = false;
+  private: bool getTimerStateFromCode(String code, boolean isSet) {
+    // boolean isSet = false;
     
     for (int i=0; i<25; i++)
     {
@@ -190,7 +188,7 @@ class HvacController {
     }
   }
 
-  private: Mode getModeFromParameter(String param) {
+  private: Mode getModeFromParameter(String param, Mode previousMode) {
     // Remove temperature code
     param.setCharAt(0, '0');
     param.setCharAt(2, '0');
@@ -204,6 +202,7 @@ class HvacController {
       return Heat;
     if (param.equalsIgnoreCase(CHIGO_PARAM_MODE_FAN) || param.equalsIgnoreCase(CHIGO_PARAM_MODE_FAN_ALT))
       return Fan;
+    return previousMode;
   }
 
   private: char* getSpeedAsParameter(Speed airSpeed, bool airFlow) {
@@ -343,15 +342,53 @@ class HvacController {
     }
   }
 
+  private: uint16_t bit_threshold = 1000;
+  private: uint16_t header_len = 4;
+  private: uint16_t footer_len = 2;
+
+  private: char toBit(uint32_t usecs) {
+    return (usecs > bit_threshold) ? '1' : '0';
+  }
+
+  /**
+   * Check IR data header and footer
+   */
+  public: bool verifyIRData(const decode_results *results)
+  {
+      uint16_t footer_start = getCorrectedRawLength(results) - footer_len + 1;
+      uint32_t usecs;
+
+      // Check header (2 bits in 4 signals)
+      char header[] = "1010";
+      for (int i = 0; i < header_len; i++) {
+        usecs = results->rawbuf[i] * RAWTICK;
+        if (header[i] == toBit(usecs)) {
+          if (DEBUG_MODE)
+            Serial.print("[DEBUG] Incorrect header");
+          return false;
+        }
+      }
+
+      // Check footer (2 bits in 3 signals)
+      char footer[] = "010";
+      for (int i = 0; i < footer_len+1; i++) {
+        usecs = results->rawbuf[i+footer_start] * RAWTICK;
+        if (footer[i] == toBit(usecs)) {
+          if (DEBUG_MODE)
+            Serial.print("[DEBUG] Incorrect footer");
+          return false;
+        }
+      }
+
+      return true;
+  }
+
   /**
    * Decode series of raw signals to hex code
    */
   public: String decodeIRData(const decode_results *results)
   {
       String bits; // output string (temp)
-      uint16_t bit_threshold = 1000;
-      uint16_t header_len = 4;
-      uint16_t footer_len = 2;
       uint16_t body_end = getCorrectedRawLength(results) - footer_len;
       uint32_t usecs;
 
@@ -393,13 +430,15 @@ class HvacController {
         Serial.println();
       }
 
-      // Output the message body as HEX
-      receiveCommand(decodeIRData(&results));
-      yield();
+      if (verifyIRData(&results)) {
+        // Output the message body as HEX
+        receiveCommand(decodeIRData(&results));
+        yield();
 
-      // Update memory based on IR signal
-      if (MEMORY_MODE) {
-        updateMemory();
+        // Update memory based on IR signal
+        if (MEMORY_MODE) {
+          updateMemory();
+        }
       }
 
       return state;
@@ -587,8 +626,8 @@ class HvacController {
     // Set timer state
     if (!timer.equalsIgnoreCase(CHIGO_TIMER_SKIP)) {
 
-      state.timerSet = getTimerStateFromCode(timer);
-      state.timerDelay = getTimerDelayFromCode(timer);
+      state.timerSet = getTimerStateFromCode(timer, state.timerSet);
+      state.timerDelay = getTimerDelayFromCode(timer, state.timerDelay);
 
       // Add timer details if delay is new
       if (state.timerDelay > 0 && !state.timerSet) {
@@ -619,8 +658,8 @@ class HvacController {
       state.power = getPowerFromParameter(param);
 
     // Set mode and temperature state (always)
-    state.mode = getModeFromParameter(temp_mode);
-    state.temperature = getTemperatureFromParameter(temp_mode);
+    state.mode = getModeFromParameter(temp_mode, state.mode);
+    state.temperature = getTemperatureFromParameter(temp_mode, state.temperature);
 
     // Set air speed, air flow, swing and sleep state
     // if command is passed

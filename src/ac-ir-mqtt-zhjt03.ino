@@ -236,8 +236,8 @@ void loop() {
     client.publish(topic_temperature_publish, itoa(newHvacState.temperature, c_temp, 10), true);
   }
 
-  // Check for changes in AC mode
-  if (newHvacState.mode != oldHvacState.mode) {
+  // Check for changes in AC mode if powered on
+  if (newHvacState.mode != oldHvacState.mode && newHvacState.power) {
     if (newHvacState.mode < 5)
       client.publish(topic_mode_publish, ac_modes[newHvacState.mode], true);
   }

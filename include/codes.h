@@ -1,4 +1,5 @@
 // Meta
+#define CHIGO_HEADER              "FF00FF00"
 #define CHIGO_FOOTER              "54AB"
 
 // Timers (signal range 0-3)
