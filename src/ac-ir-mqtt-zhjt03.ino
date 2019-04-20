@@ -223,6 +223,7 @@ void loop() {
   // Check for changes in power
   if (newHvacState.power != oldHvacState.power) {
     client.publish(topic_power_publish, newHvacState.power ? "1" : "0", true);
+    publishState(newHvacState);
     
     // Fix for Home Assistant MQTT HVAC
     // set pseudo-mode "off"
